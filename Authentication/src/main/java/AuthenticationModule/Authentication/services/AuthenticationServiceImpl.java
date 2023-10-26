@@ -12,6 +12,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.print.DocFlavor;
+
 @Service
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
@@ -32,9 +34,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     .build();
 
             userRepository.save(user);
-
+            String redirectUrl = getUserRole(user);
             var jwtToken = jwtService.generateToken(user);
-            return AuthenticationResponse.builder().token(jwtToken).build();
+            return AuthenticationResponse.builder().token(jwtToken).redirectUrl(redirectUrl).build();
         }
         throw new ServiceException("Could not register user.");
     }
@@ -46,11 +48,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ServiceException("User not found"));
 
+        String redirectUrl = getUserRole(user);
+
         try {
             var jwtToken = jwtService.generateToken(user);
-            return AuthenticationResponse.builder().token(jwtToken).build();
+            return AuthenticationResponse.builder().token(jwtToken).redirectUrl(redirectUrl).build();
         } catch (Exception e) {
             throw new ServiceException("Token generation failed", e);
+        }
+    }
+    private String getUserRole(User user) {
+        if (user.getRole().name().equals("ROLE_ADMIN")) {
+            return "register.html";
+        } else if (user.getRole().name().equals("ROLE_USER")) {
+            return "user.html";
+        } else {
+            throw new ServiceException("Unrecognized role");
         }
     }
 
