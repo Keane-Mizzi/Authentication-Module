@@ -18,9 +18,9 @@ public class DatabaseInitializer {
                 User admin = User.builder()
                         .firstName("Admin")
                         .lastName("User")
-                        .email("admin@admin.com")
+                        .email("admin@admin.com") // default login hardcoded
                         .password(passwordEncoder.encode("admin123"))
-                        .role(Role.ADMIN)
+                        .role(Role.ROLE_ADMIN)
                         .build();
                 userRepository.save(admin);
             }

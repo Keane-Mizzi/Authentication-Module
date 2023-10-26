@@ -1,6 +1,5 @@
 package AuthenticationModule.Authentication.controllers;
 
-import AuthenticationModule.Authentication.models.AuthenticationRequest;
 import AuthenticationModule.Authentication.models.AuthenticationResponse;
 import AuthenticationModule.Authentication.models.RegisterRequest;
 import AuthenticationModule.Authentication.services.AuthenticationService;
@@ -12,17 +11,18 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@PreAuthorize("hasRole('ROLE_ADMIN')")
+@RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
-public class AuthController {
+public class AdminController {
     private final AuthenticationService authenticationService;
 
-    @PostMapping("/authenticate")
-    public ResponseEntity<?> authenticate(@RequestBody AuthenticationRequest request) {
+    @PostMapping("/create")
+    public ResponseEntity<?> create(@RequestBody RegisterRequest request) {
         try {
-            AuthenticationResponse response = authenticationService.authenticate(request);
+            AuthenticationResponse response = authenticationService.createUser(request);
             return ResponseEntity.ok(response);
-        } catch(ServiceException e) {
+        } catch (ServiceException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }
     }

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.service.spi.ServiceException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +22,48 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Transactional
     public AuthenticationResponse createUser(RegisterRequest request) {
+        if(validateEmailPasswordCriteria(request)) {
+            var user = User.builder()
+                    .firstName(request.getFirstName())
+                    .lastName(request.getLastName())
+                    .email(request.getEmail())
+                    .password(passwordEncoder.encode(request.getPassword()))
+                    .role(Role.ROLE_USER)
+                    .build();
 
+            userRepository.save(user);
+
+            var jwtToken = jwtService.generateToken(user);
+            return AuthenticationResponse.builder().token(jwtToken).build();
+        }
+        throw new ServiceException("Could not register user.");
+    }
+
+    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+
+        authenticateUser(request.getEmail(), request.getPassword());
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ServiceException("User not found"));
+
+        try {
+            var jwtToken = jwtService.generateToken(user);
+            return AuthenticationResponse.builder().token(jwtToken).build();
+        } catch (Exception e) {
+            throw new ServiceException("Token generation failed", e);
+        }
+    }
+
+    private void authenticateUser(String email, String password) {
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(email, password);
+        try {
+            authenticationManager.authenticate(authenticationToken);
+        } catch (AuthenticationException e) {
+            throw new ServiceException("Invalid credentials", e);
+        }
+    }
+
+    private boolean validateEmailPasswordCriteria(RegisterRequest request) {
         if (isEmailAlreadyRegistered(request.getEmail())) {
             throw new ServiceException("A user with this email already exists");
         }
@@ -35,36 +77,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (request.getPassword().length() < 8) {
             throw new ServiceException("Password must be at least 8 characters long");
         }
-
-        var user = User.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.USER)
-                .build();
-
-        userRepository.save(user);
-
-        var jwtToken = jwtService.generateToken(user);
-        return AuthenticationResponse.builder().token(jwtToken).build();
+        return true;
     }
 
-    public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
-        var user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow();
-        var jwtToken = jwtService.generateToken(user);
-        return AuthenticationResponse.builder().token(jwtToken).build();
-    }
 
     private boolean isEmailAlreadyRegistered(String email) {
         return userRepository.findByEmail(email).isPresent();
     }
+
 
 }
