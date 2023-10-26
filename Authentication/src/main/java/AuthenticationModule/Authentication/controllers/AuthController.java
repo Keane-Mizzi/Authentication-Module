@@ -39,9 +39,4 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }
-
-    @GetMapping("/test")
-    public ResponseEntity<?> test(){
-        return ResponseEntity.ok("test");
-    }
 }

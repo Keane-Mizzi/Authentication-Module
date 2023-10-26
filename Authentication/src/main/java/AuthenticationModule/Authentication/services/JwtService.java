@@ -19,7 +19,7 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
-    // get key from application yml
+    // set this to application yml
     private static final String SECRET_KEY = "1625da028e77d0481ac5a83a948822de6be38fce74552ecb2510cfb1d2140a2c";
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -30,10 +30,11 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
+    // generating a  new token and assigning the user role
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
 
-        // Assuming the role is the name of the first authority
+        // assuming the role is the name of the first authority
         Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
         if (!authorities.isEmpty()) {
             String role = authorities.iterator().next().getAuthority();

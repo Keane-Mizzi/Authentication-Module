@@ -22,6 +22,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
+    // creating a new user with validation for email address as well as password length (min 8 char)
     @Transactional
     public AuthenticationResponse createUser(RegisterRequest request) {
         if(validateEmailPasswordCriteria(request)) {
@@ -41,6 +42,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         throw new ServiceException("Could not register user.");
     }
 
+    // authenticating the user, and assigning a new token
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
 
         authenticateUser(request.getEmail(), request.getPassword());
@@ -57,6 +59,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new ServiceException("Token generation failed", e);
         }
     }
+    // Checking which role the user is logged into, to provide a redirect url
     private String getUserRole(User user) {
         if (user.getRole().name().equals("ROLE_ADMIN")) {
             return "register.html";

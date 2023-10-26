@@ -11,6 +11,7 @@ public class WebConfig {
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
+            // Hardcoded frontend url change if you're hosted on a different address
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
